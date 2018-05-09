@@ -16,12 +16,7 @@ class ToDoListApp extends Component {
   constructor() {
     super();
     this.state = {
-      // todos: [
-      //   // { id: 0, todo: "Learn React", completed: false },
-      //   // { id: 1, todo: "Learn Redux", completed: false }
-      // ],
       inputText: ""
-      // lastId: 1
     };
     this.toggleComplete = this.toggleComplete.bind(this);
     this.removeTodo = this.removeTodo.bind(this);
@@ -30,34 +25,21 @@ class ToDoListApp extends Component {
     this.addTodo = this.addTodo.bind(this);
   }
 
-  toggleComplete(item) {
-    // let todos = this.state.todos.map(todo => {
-    //   if (todo.id === item.id) {
-    //     todo.completed = !todo.completed;
-    //   }
-    //   return todo;
-    // });
-    // this.setState({ todos });
-
-    ToDos.update({ _id: item._id }, { $set: { complete: !item.complete } });
+  toggleComplete(todo) {
+    Meteor.call("todos.toggleComplete", todo);
   }
 
   //ask maybe?
-  removeTodo(item) {
-    // let todos = this.state.todos.filter(todo => todo.id !== item.id);
-    // this.setState({ todos });
-    ToDos.remove({ _id: item._id });
+  removeTodo(todo) {
+    Meteor.call("todos.removeTodo", todo);
   }
 
-  clearCompleted() {
-    // let todos = this.state.todos.filter(todo => !todo.completed);
-    // this.setState({ todos });
-    // ToDos.remove({ complete: { $eq: true } });
+  clearCompleted(todo) {
     let completedtodos = this.props.todos.filter(todo => {
       return todo.complete === true;
     });
     completedtodos.map(item => {
-      ToDos.remove({ _id: item._id });
+      Meteor.call("todos.clearCompleted", item);
     });
   }
 
@@ -65,32 +47,20 @@ class ToDoListApp extends Component {
     this.setState({ inputText: event.target.value });
   }
 
-  addTodo(event) {
-    event.preventDefault();
-    // let lastId = this.state.lastId;
-
-    // if (this.state.inputText) {
-    //   const newId = lastId + 1;
-    //   const newTodo = {
-    //     id: newId,
-    //     todo: this.state.inputText,
-    //     completed: false
-    //   };
-    //   let todos = this.state.todos.concat(newTodo);
-    //   this.setState({ todos, lastId: newId });
-    // }
-    ToDos.insert({
+  addTodo(todo) {
+    todo.preventDefault();
+    const newTodo = {
       todo: this.state.inputText,
-      complete: false,
-      owner: this.props.currentUserId
-    });
+      completed: false,
+      owner: Meteor.userId()
+    };
+    Meteor.call("todos.addToDo", newTodo);
+    exampleFormControlInput1.value = " ";
   }
 
   render() {
-    // console.log(this.props.todos);
-    // console.log(this.state.inputText);
-    // console.log(this.props.currentUser == " ");
     const { todos } = this.props;
+    console.log(todos);
     return (
       <div className="app-wrapper">
         <div className="login-wrapper">
@@ -136,10 +106,11 @@ class ToDoListApp extends Component {
 }
 
 const ToDoAppContainer = createContainer(() => {
+  Meteor.subscribe("todos"); // NEW!
   return {
     currentUser: Meteor.user(), // NEW!
     currentUserId: Meteor.userId(), // NEW!
-    todos: ToDos.find({ owner: Meteor.userId() }).fetch()
+    todos: ToDos.find({}).fetch()
   };
 }, ToDoListApp);
 
